@@ -163,7 +163,6 @@
 //     echo $b->getName(); // ロボ次郎
 //     $tom = new User("Tom");
 //     $bob = new User("Bob");
-//
 //     echo $tom->name; // Tom
 // $bob->sayHi(); // hi, i am Bob!]
 
