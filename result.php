@@ -53,6 +53,9 @@
         }
     }
 
+    //行動指針の取得
+    $act_guideline_id = trim($_POST["act_num"]);
+
     //DBを読み込む
     try {
         // connect
@@ -117,13 +120,23 @@
     //発表者の選出
     $rand_presenter_num = $speak_class->designation($count_speak_today,$speak_possible_member_num);
 
-    echo $speak_possible_member[$rand_presenter_num];
+    // for($i = 0; $i < $count_speak_today; $i++){
+    //     echo $speak_possible_member[$rand_presenter_num];
+    // }
+    for($i = 0; $i < $speak_possible_member_num ; $i++) {
+        $temp_num[] = $i;
+    }
+    shuffle($temp_num);
+    //ランダムで指名する
+    for($i = 0; $i < $count_speak_today; $i++) {
+        echo $speak_possible_member[$temp_num[$i]];
+    }
+
     //DB、membersテーブルのsum_speakを増やす
     $sum_speak_update = $sum_speak[$rand_presenter_num]["sum_speak"] + 1;
     //現在の年月日を取得する
     $today = date("Y/m/d");
-    //行動指針の取得
-    $act_guideline_id = trim($_POST["act_num"]);
+
     //DBに書き込む
     try {
         // connect
