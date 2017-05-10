@@ -33,10 +33,16 @@
         public function speak_num(){
             return trim($_POST["num"]);
         }
-        //今回話すことができるメンバー 前回話していないメンバー
-        public function person_speak_possible($member,$yesterday_name){
-            return array_diff($member,$yesterday_name);
+        //今回話すことができるメンバー
+        public function person_speak_possible($last_time_speak_num,$yesterday_speak_member_id,$checked_member){
+            for($i = 0; $i < $last_time_speak_num;$i++) {
+                $erase_num = $yesterday_speak_member_id[$i]["id"] -1 -$i;
+                array_splice($checked_member, $erase_num, 1);
+            }
+            //print_r($yesterday_speak_member_id);
+            return $checked_member;
         }
+
         //エラー処理
         public function  error_check($checked_member_num,$count_speak_today){
             if($checked_member_num < $count_speak_today){
@@ -72,8 +78,6 @@
         //membersテーブルから最後に話したメンバーを取得する
         $stmt = $db->query("select id,name from members where last_speak =(select max(last_speak) from members)");
         $yesterday_speak_member_id = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        //$yesterday_speak_member_id = $acquisition_member;
-
         //membersテーブルから最後に話したメンバーを取得する
         $stmt = $db->query("select sum_speak from  members");
         $sum_speak = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -95,7 +99,6 @@
 
     //出席しているメンバーを取得
     $checked_member = $speak_class->member_election($all_member_num,$all_member_name);
-
     //チェックリストでチェックされえている人数を取得
     $checked_member_num = $speak_class->get_checked_member_num();
 
@@ -103,13 +106,12 @@
     $count_speak_today = $speak_class->speak_num();
 
     //最後に話したメンバーのidを取得する
-    $last_time_speak_num = $yesterday_speak_member_id[0]["id"] -1;
-    //最後に話したメンバーの名前を取得する
-    $last_time_speak_naem[] = $yesterday_speak_member_id[0]["name"];
-
+    $last_time_speak_num = count($yesterday_speak_member_id);
+    //前回話していないメンバーを取得する
+    $speak_possible_member = $speak_class->person_speak_possible($last_time_speak_num,$yesterday_speak_member_id,$checked_member);
+    //print_r($speak_possible_member);
     //今回話すことができるメンバー 前回話していないメンバー
-    $speak_possible_member = array_diff($all_member_name,$last_time_speak_naem);
-    //echo $speak_possible_member[1];
+    //$speak_possible_member = array_diff($all_member_name,$last_time_speak_naem);
 
     //本日話すことが可能な人数（昨日話した人は除く）
 
@@ -118,18 +120,20 @@
 
     $speak_possible_member_num  = count($speak_possible_member);
     //発表者の選出
-    $rand_presenter_num = $speak_class->designation($count_speak_today,$speak_possible_member_num);
+    //$rand_presenter_num = $speak_class->designation($count_speak_today,$speak_possible_member_num);
 
     // for($i = 0; $i < $count_speak_today; $i++){
     //     echo $speak_possible_member[$rand_presenter_num];
     // }
     for($i = 0; $i < $speak_possible_member_num ; $i++) {
-        $temp_num[] = $i;
+        $random_speak_num[] = $i;
     }
-    shuffle($temp_num);
+    shuffle($random_speak_num);
     //ランダムで指名する
     for($i = 0; $i < $count_speak_today; $i++) {
-        echo $speak_possible_member[$temp_num[$i]];
+        echo $speak_possible_member[$random_speak_num[$i]];
+        //発表者のidを取得する
+        $today_speak_member_id[] = $random_speak_num[$i] + 2;
     }
 
     //DB、membersテーブルのsum_speakを増やす
@@ -144,21 +148,23 @@
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         //update
-        //membersテーブルを編集
-        $stmt = $db->prepare("update members set sum_speak = :sum_speak,last_speak = :last_speak,act_guideline_id = :act where name = :name");
-        $stmt->execute([
-            ':sum_speak' => $sum_speak_update,
-            ':last_speak' => $today,
-            ':act' => $act_guideline_id,
-            ':name' => $speak_possible_member[$rand_presenter_num]
-        ]);
+        for($i = 0; $i < $count_speak_today; $i++) {
+            //membersテーブルを編集
+            $stmt = $db->prepare("update members set sum_speak = :sum_speak,last_speak = :last_speak,act_guideline_id = :act where id = :id");
+            $stmt->execute([
+                ':sum_speak' => $sum_speak_update,
+                ':last_speak' => $today,
+                ':act' => $act_guideline_id,
+                ':id' => $today_speak_member_id[$i]
+            ]);
+        }
         //発表者のidをきろくする
         $rand_presenter_num = $rand_presenter_num + 1;
-
-        //speak_hitotorysテーブルに追加
-        $stmt = $db->prepare("insert into speak_historys(date,member_id,act_guideline_id) values(?,?,?)");
-        $stmt->execute([$today,$rand_presenter_num,$act_guideline_id]);
-
+        for($i = 0; $i < $count_speak_today; $i++) {
+            //speak_hitotorysテーブルに追加
+            $stmt = $db->prepare("insert into speak_historys(date,member_id,act_guideline_id) values(?,?,?)");
+            $stmt->execute([$today,$today_speak_member_id[$i],$act_guideline_id]);
+        }
         //データベースの接続を切る
         $db = null;
 
