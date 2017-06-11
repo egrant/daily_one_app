@@ -1,7 +1,3 @@
-<?php
- ?>
-
-
  <!DOCTYPE html>
  <htmllang = "ja">
      <head>

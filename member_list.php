@@ -11,7 +11,7 @@ class member_list {
             //出欠席チェックリストを代入
             $member_list = trim( $_POST["list$i"] );
 
-            if( $member_list == "") {
+            if($member_list == "") {
                 //欠席メンバーを$memberから削除、ただし欠席人数分をマイナスしないとずれていくのので　-$absence_numとしている
                 array_splice($all_member_name , $i - $absence_num , 1);
                 $absence_num++;

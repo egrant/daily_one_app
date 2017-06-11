@@ -1,0 +1,20 @@
+#num {
+    color:#11aa11;
+}
+
+#check {
+    color:#5511aa;
+}
+
+#act {
+    color:#aa5511;
+}
+
+div {
+    float:left;
+    padding:20px;
+}
+
+#bottom {
+    clear:both;
+}
