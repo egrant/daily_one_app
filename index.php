@@ -10,11 +10,33 @@
         $stmt = $db->query("select name from members");
         $member = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        //前回決めた行動指針idを取得する
+        $stmt = $db->query(
+            "select act_guideline_id from speak_histories order by id desc limit 1");
+        $act_guideline_id = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $act_id = $act_guideline_id[0][act_guideline_id];
+
+        //前回決めた行動指針の内容を取得する
+        $stmt = $db->query(
+            "select content from act_guidelines where id = $act_id");
+        $act_guideline_content = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        //前回決めたメンバーの人数を取得する
+        $stmt = $db->query(
+            "select count from speak_histories order by id desc limit 1");
+        $temp = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $speak_member_count = $temp[0][count];
+
+        //前回決めたメンバーを取得する
+        $stmt = $db->query(
+            "select name from members order by last_speak desc limit $speak_member_count");
+        $speak_member_name = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     } catch(PDOException $e) {
         echo $e->getMessage();
         exit;
     }
-
+    
     $member_count = count($member);
 
     $i = 0;
@@ -31,7 +53,16 @@
     <body>
         <form method="post" action="result.php">
 
-        <h1>ランダム指名</h1>
+        <h1 id="center">デイリーワン振り返り</h1>
+
+        <h2 id="center1">行動指針と発表者<h2>
+
+        <h3 id="center1"><?= $act_guideline_content[0][content]?><h3>
+
+        <?php foreach($speak_member_name as $name):;?>
+        <h3 id="center1"><?=$name[name];?><h3>
+
+        <?php endforeach;?>
 
         <div id="check">
             <h3>メンバーチェックリスト</h3>

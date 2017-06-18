@@ -24,9 +24,6 @@ require_once( 'member_list.php' );
                 select max(id) from speak_histories)");
         $yesterday_speak_num = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // $stmt = $db->query("select id,name from members order by last_speak desc limit 2");
-        // $yesterday_speak_member_id = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         $temp = $yesterday_speak_num[count];
         //前回話した人のidと名前を取得
         $stmt = $db->query(
@@ -36,6 +33,7 @@ require_once( 'member_list.php' );
         //membersテーブルから話した回数を取得する
         $stmt = $db->query("select sum_speak from  members");
         $sum_speak = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     } catch (PDOException $e) {
         echo $e->getMessage();
         exit;
@@ -55,18 +53,10 @@ require_once( 'member_list.php' );
     $checked_member_num = count($checked_member);
 
     //本日話す人数を取得
-    $count_speak_today = trim( $_POST["num"] );;
+    $count_speak_today = trim( $_POST["num"] );
 
     //前回話したメンバーの人数を取得する
     $last_time_speak_num = count($yesterday_speak_member_id);
-
-//print_r($checked_member);
-
-// for( $i = 0 ; $i < $last_time_speak_num ; $i++ ) {
-//     $erase_num = array_search($yesterday_speak_member_id[$i]["name"], $checked_member);
-//     array_splice($checked_member, $erase_num, 1);
-//     print_r($erase_num);
-// }
 
     //前回話したメンバーで今回出席している人数
     $member_count_attendance = $speak_class->member_count_attendance_Checked(
@@ -89,7 +79,6 @@ require_once( 'member_list.php' );
         $speak_possible_member = $speak_class->person_speak_possible(
         $last_time_speak_num,$yesterday_speak_member_id,$checked_member);
     }
-//print_r($speak_possible_member);
 
     //今回話すことができるメンバーの人数
     $speak_possible_member_num  = count($speak_possible_member);
@@ -105,7 +94,8 @@ require_once( 'member_list.php' );
     shuffle($random_num);
     //ランダムで指名する
     for($i = 0; $i < $count_speak_today; $i++) {
-        echo $speak_possible_member[$random_num[$i]];
+        // echo $speak_possible_member[$random_num[$i]];
+        $display_member[$i] = $speak_possible_member[$random_num[$i]];
 
         //発表者の名前を取得する
         $today_speak_name[$i] = $speak_possible_member[$random_num[$i]];
@@ -113,6 +103,7 @@ require_once( 'member_list.php' );
         //発表者のidを取得する
         //$today_speak_member_id[$i] = $random_num[$i] + 2;
     }
+
     //DB、membersテーブルのsum_speakを増やす
     $sum_speak_update = $sum_speak[$rand_presenter_num]["sum_speak"] + 1;
 
@@ -124,7 +115,6 @@ require_once( 'member_list.php' );
         $db = new PDO(PDO_DSN, DB_USERNAME, DB_PASSWORD);
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        //print_r($today_speak_name[0]);
         //今回話したメンバーのidを取得する
         for($i = 0 ; $i < $count_speak_today ; $i++) {
             $stmt = $db->prepare("select id from members where name = ?");
@@ -134,7 +124,8 @@ require_once( 'member_list.php' );
 
         //membersテーブルを編集する、最後に話した日にち、話した総数、話した行動指針内容
         for( $i = 0; $i < $count_speak_today ; $i++ ) {
-            $stmt = $db->prepare("update members set last_speak = :last_speak,act_guideline_id = :act where id = :id");
+            $stmt = $db->prepare(
+                "update members set last_speak = :last_speak,act_guideline_id = :act where id = :id");
             $stmt->execute([
                 ':last_speak' => $today,
                 ':act' => $act_guideline_id,
@@ -142,14 +133,26 @@ require_once( 'member_list.php' );
             ]);
         }
 
-        // for( $i = 0; $i < $count_speak_today; $i++ ) {
-        //     $stmt = $db->prepare("insert into speak_histories(date, member_id, act_guideline_id, count) values(?,?,?,?)");
-        //     $stmt->execute([$today, $speak_id[$i][id], $act_guideline_id], $count_speak_today);
-        // }
+        //行動指針を取得する
+        $stmt = $db->query(
+            "select content from act_guidelines where id = $act_guideline_id");
+        $act_guideline_content = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        //今回話した人数をspeak_hitotoriesテーブルに追加する
-         $stmt = $db->prepare("insert into speak_histories(count) values(?)");
-         $stmt->execute([$count_speak_today]);
+        //今回話した人数と行動指針のidをspeak_historiesテーブルに追加する
+        $stmt = $db->prepare(
+             "insert into speak_histories(act_guideline_id,count) values(?,?)");
+        $stmt->execute([
+            $act_guideline_id,
+            $count_speak_today
+        ]);
+
+        // $stmt = $db->prepare(
+        //     "insert into speak_histories(count) values(?)");
+        // $stmt->execute(
+        //     [$count_speak_today]
+        // );
+
+         //次回の行動指針の内容をspeak_historiesテーブルにに記載する
 
         //データベースの接続を切る
         $db = null;
@@ -158,17 +161,26 @@ require_once( 'member_list.php' );
         echo $e->getMessage();
         exit;
     }
-
  ?>
 
- <!DOCTYPE html>
- <htmllang = "ja">
+<html>
+    <!DOCTYPE html>
+    <htmllang = "ja">
      <head>
          <meta charset = "UTF-8">
+         <link rel="stylesheet" href="style.css">
          <title>行動指針の振り返り</title>
      </head>
      <body>
+         <h1 id="center1"><?= $act_guideline_content[0][content];?></h1>
+
+         <h2 id="center">発表者</h2>
+         <?php foreach($display_member as $member): ?>
+
+             <h3 id="member"><?= $member?></h3>
+
+         <?php endforeach; ?>
          <br>
             <a href="index.php">戻る</a>
         </body>
-    </html>
+</html>
