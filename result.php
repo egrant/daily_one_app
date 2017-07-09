@@ -90,7 +90,7 @@ require_once( 'member_list.php' );
         //話すことができるメンバーの人数分数値を配列に入れる
         $random_num[] = $i;
     }
-
+//test
     shuffle($random_num);
     //ランダムで指名する
     for($i = 0; $i < $count_speak_today; $i++) {
