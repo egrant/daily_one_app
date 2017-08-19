@@ -58,8 +58,6 @@ class member_list {
             return $count;
     }
 
-
-
     //エラー処理
     public function  error_check($checked_member_num, $count_speak_today) {
         if( $checked_member_num < $count_speak_today ) {
@@ -73,5 +71,21 @@ class member_list {
             $rand_presenter_num = mt_rand( 0, $speak_possible_member_num -$i );
         }
         return $rand_presenter_num;
+    }
+
+    public function mt_shuffle(array &$array) {
+
+        $array = array_values($array);
+        $cnt = count($array);
+
+        //配列はcntより1少ないので-1をする
+        for($i = $cnt -1; $i > 0; $i--) {
+
+            $j = mt_rand(0 , $i);
+            if($i !== $j) {
+                //配列の中身を入れ替える
+                list($array[$i], $array[$j]) = [$array[$j], $array[$i]];
+            }
+        }
     }
 }

@@ -90,8 +90,9 @@ require_once( 'member_list.php' );
         //話すことができるメンバーの人数分数値を配列に入れる
         $random_num[] = $i;
     }
-// test
-    shuffle($random_num);
+
+    $speak_class->mt_shuffle($random_num);
+    //shuffle($random_num);
     //ランダムで指名する
     for($i = 0; $i < $count_speak_today; $i++) {
         // echo $speak_possible_member[$random_num[$i]];
@@ -140,8 +141,9 @@ require_once( 'member_list.php' );
 
         //今回話した人数と行動指針のidをspeak_historiesテーブルに追加する
         $stmt = $db->prepare(
-             "insert into speak_histories(act_guideline_id,count) values(?,?)");
+             "insert into speak_histories(member_id,act_guideline_id,count) values(?,?,?)");
         $stmt->execute([
+            $speak_id[0][id],
             $act_guideline_id,
             $count_speak_today
         ]);
